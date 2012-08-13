@@ -1,5 +1,10 @@
 <?php
 
+ini_set('display_errors','On');
+error_reporting(E_ERROR | E_PARSE);
+
+define('ROOT', __DIR__ . '/..');
+
 /* This function is called for each get route that you hav defined in
  * your index.php file. This function is a simple pass-through function
  * that hands off the route and callback to the register function of
@@ -37,6 +42,23 @@ class Flow {
 			 return '/' . $route['request'];
 		 } else {
 			 return '/';
+		 }
+	 }
+	 
+	 public function set($index, $value) {
+		 $this->vars[$index] = $value;
+	 }
+	 
+	 public function render($view, $layout = "layout") {
+		 $this->content = ROOT. '/views/'. $view . '.php';
+		 foreach ($this->vars as $key => $value) {
+			 $$key = $value;
+		 }
+		 
+		 if (!$layout) {
+			 include($this->content);
+		 } else {
+			 include(ROOT. '/views/' . $layout . '.php');
 		 }
 	 }
 	 
