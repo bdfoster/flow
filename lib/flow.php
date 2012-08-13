@@ -8,17 +8,33 @@ define('ROOT', __DIR__ . '/..');
 /* This function is called for each get route that you hav defined in
  * your index.php file. This function is a simple pass-through function
  * that hands off the route and callback to the register function of
- * Flow.
+ * Flow. Later we added a function for each HTTP method (GET, POST, PUT,
+ * DELETE) and filled in the $method variable with the HTTP method we 
+ * want to match.
  */
 function get($route, $callback) {
-	Flow::register($route, $callback);
+	Flow::register($route, $callback, 'GET');
+}
+
+function post($route, $callback) {
+	Flow::register($route, $callback, 'POST');
+}
+
+function put($route, $callback) {
+	Flow::register($route, $callback, 'PUT');
+}
+
+function delete($route, $callback) {
+	Flow::register($route, $callback, 'DELETE');
 }
 
 class Flow {
 	private static $instance;
 	public static $route_found = false;
 	public $route = '';
-	
+	public $method = '';
+    public $content = '';
+    
 	/* The Singleton Pattern allows our class to not just be a simple
 	 * class, but also to be one object. This means that each time we
 	 * call our class, we are accessing a single existing object. But
@@ -34,6 +50,7 @@ class Flow {
 	 
 	 public function __construct() {
 		 $this->route = $this->get_route();
+		 $this->method = $this->get_method();
 	 }
 	 
 	 protected function get_route() {
@@ -42,6 +59,14 @@ class Flow {
 			 return '/' . $route['request'];
 		 } else {
 			 return '/';
+		 }
+	 }
+	 
+	 protected function get_method() {
+		 if (!isset($_SERVER['REQUEST_METHOD'])) {
+			 return 'GET';
+		 } else {
+			 return $_SERVER['REQUEST_METHOD'];
 		 }
 	 }
 	 
@@ -78,17 +103,46 @@ class Flow {
 	  * work that was defined by our route. Our Flow instance will also
 	  * be passed with the callback function so that we can use it to 
 	  * our advantage. If the route is not a match, we will return false
-	  * so that we know the route was not a match.
+	  * so that we know the route was not a match. Later, we added a 
+	  * method arguement to be passed into our register function. We
+	  * then used this $method variable in our register function by
+	  * adding it to the list of arguements that have to be true in
+	  * order for it to be considered a match. Therefore, if the routes
+	  * match, but it's a different HTTP method than expected, it will
+	  * be ignored. This will allow you to create routes with the same
+	  * name but act differently based on the method that is passed.
+	  * Sounds just like REST, doesn't it?
 	  */
 	  
-	 public static function register($route, $callback) {
+	 public static function register($route, $callback, $method) {
 		$flow = static::get_instance();
 		 
-		if ($route == $flow->route && !static::$route_found) {
+		if ($route == $flow->route && !static::$route_found && $flow->method == $method) {
 			static::$route_found = true;
 			echo $callback($flow);
 		} else {
 			return false;
+		}
+	}
+	
+	/* Here, we created a simple function called form that serves as a 
+	 * wrapper around the $_POST array, which is an array of variables
+	 * passed through the HTTP POST method. This will allow us to
+	 * collect variables after we POST them.
+	 */
+	public function form($key) {
+		return $_POST[$key];
+	}
+	
+	/* This function will soon be used everywhere to create clean links
+	 * so that we can link to other resources in our application.
+	 */
+	public function make_route($path = '') {
+		$url = explode("/", $_SERVER['PHP_SELF']);
+		if ($url[1] == index.php) {
+			return $path;
+		} else {
+			return '/' . $url[1] . $path;
 		}
 	}
 }
