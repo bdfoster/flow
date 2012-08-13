@@ -1,7 +1,7 @@
 <?php
 
 ini_set('display_errors','On');
-error_reporting(E_ERROR | E_PARSE);
+error_reporting(E_ALL | E_STRICT);
 
 define('ROOT', __DIR__ . '/..');
 
@@ -34,7 +34,10 @@ class Flow {
 	public $route = '';
 	public $method = '';
     public $content = '';
-    
+	public $vars = array();
+	public $route_segments = array();
+	public $route_variables = array();
+	
 	/* The Singleton Pattern allows our class to not just be a simple
 	 * class, but also to be one object. This means that each time we
 	 * call our class, we are accessing a single existing object. But
@@ -50,6 +53,7 @@ class Flow {
 	 
 	 public function __construct() {
 		 $this->route = $this->get_route();
+		 $this->route_segments = explode('/', trim($this->route, '/'));
 		 $this->method = $this->get_method();
 	 }
 	 
@@ -115,16 +119,43 @@ class Flow {
 	  */
 	  
 	 public static function register($route, $callback, $method) {
-		$flow = static::get_instance();
-		 
-		if ($route == $flow->route && !static::$route_found && $flow->method == $method) {
-			static::$route_found = true;
-			echo $callback($flow);
-		} else {
-			return false;
+		if (!static::$route_found) {
+			$flow = static::get_instance();
+			$url_parts = explode('/', trim($route, '/'));
+			$matched = null;
+
+			if (count($flow->route_segments) == count($url_parts)) {
+				foreach ($url_parts as $key=>$part) {
+					if (strpos($part, ":") !== false) {
+						// Contains a route variable
+						$flow->route_variables[substr($part, 1)] = $flow->route_segments[$key];;
+					} else {
+						// Does not contain a route variable
+						if ($part == $flow->route_segments[$key]) {
+							if (!$matched) {
+								// Routes match
+								$matched = true;
+							}
+						} else {
+							// Routes don't match
+							$matched = false;
+						}
+					}
+				}
+			} else {
+				// Routes are different lengths
+				$matched = false;
+			}
+				
+			if (!$matched || $flow->method != $method) {
+				return false;
+			} else {
+				static::$route_found = true;
+				echo $callback($flow);
+			}
 		}
 	}
-	
+
 	/* Here, we created a simple function called form that serves as a 
 	 * wrapper around the $_POST array, which is an array of variables
 	 * passed through the HTTP POST method. This will allow us to
@@ -144,6 +175,10 @@ class Flow {
 		} else {
 			return '/' . $url[1] . $path;
 		}
+	}
+	
+	public function request($key) {
+		return $this->route_variables[$key];
 	}
 }
 	
