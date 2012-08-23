@@ -5,13 +5,7 @@ Original Author:
 Contributors:
 	Tim Juravich (via the book "CouchDB and PHP Web Development")
 ========================================================================
-This PHP Framework contains the following functionality:
-	* Complex URL Routing
-	* CouchDB and MySQL Support
-========================================================================
-Requirements:
-	* Tested on apache web server only (others may work, but not tested)
-	* AllowOverride set to ON in apache configs
-	* Debian Packages: php5 php5-dev libapache2-mod-php5 php5-curl
-	  php5-mcrypt php5-suhosin
-========================================================================
+This PHP Framework takes care of the heavy lifting associated with URL
+routing. 
+
+<TODO: Finish README>
